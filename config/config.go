@@ -20,6 +20,7 @@ type Network struct {
 	PolyChainID               uint64
 	Name                      string
 	Provider                  string
+	BackupProviders           []string
 	Wrapper                   string
 	WrapperO3                 string
 	NativeWrapper             string

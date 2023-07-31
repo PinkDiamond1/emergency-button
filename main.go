@@ -306,11 +306,6 @@ func main() {
 				log.Errorf("network with chainId %d not found in config file", id)
 				continue
 			}
-			client, err := ethclient.Dial(netCfg.Provider)
-			if err != nil {
-				log.Errorf("fail to dial client %s of network %d", netCfg.Provider, id)
-				continue
-			}
 			txList := txns.GetTxns(uint64(id))
 			if txList == nil {
 				log.Errorf("txns with chainId %d not found in config file", id)
@@ -318,8 +313,16 @@ func main() {
 			}
 
 			go func() {
+				client, err := ethclient.Dial(netCfg.Provider)
+				queueLens := len(netCfg.BackupProviders)
+				for i := 0; err != nil; i = (i + 1) % queueLens {
+					client, err = ethclient.Dial(netCfg.BackupProviders[i])
+				}
 				log.Infof("Shutting down %s ...", netCfg.Name)
 				err = shutTools.ExecutePauseTxns(client, txList.TxList)
+				for err != nil {
+					err = shutTools.ExecutePauseTxns(client, txList.TxList)
+				}
 				sig <- Msg{netCfg.PolyChainID, err}
 			}()
 			cnt += 1
