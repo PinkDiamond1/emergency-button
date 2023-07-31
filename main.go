@@ -320,7 +320,11 @@ func main() {
 				}
 				log.Infof("Shutting down %s ...", netCfg.Name)
 				err = shutTools.ExecutePauseTxns(client, txList.TxList)
-				for err != nil {
+				for i := 0; err != nil; i = (i + 1) % queueLens {
+					client, err = ethclient.Dial(netCfg.BackupProviders[i])
+					if err != nil {
+						continue
+					}
 					err = shutTools.ExecutePauseTxns(client, txList.TxList)
 				}
 				sig <- Msg{netCfg.PolyChainID, err}
